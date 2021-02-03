@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.5-beta.2
+// @version		1.2.6-alpha.3
 // @description	升学 E 网通广告跳过及视频极速播放
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
@@ -18,9 +18,12 @@
 * 1.2.4-beta.3：优化“刷视频”功能逻辑；改为本地储存。
 * 1.2.5-beta：修复增加的按钮定位问题；修改储存状态逻辑以防止多标签页干扰。
 * 1.2.5-beta.2：检测看课进度上传失败的错误提示，若出现则刷新页面；优化按钮添加顺序。
+* 1.2.6-alpha：将所有配置选项整合到一个小页面。
+* 1.2.6-alpha.2：完善配置选项页面功能。
+* 1.2.6-alpha.3：修复一些问题。
 */
 
-(function ($) {
+(function ($, styleText) {
 	'use strict';
 	if (location.protocol !== 'https:') { // HTTP 转 HTTPS
 		location.protocol = 'https:';
@@ -30,58 +33,82 @@
 			fastPlay: 0,
 			fastPlay_2: 0,
 			uploadError: 0
-		}, loopVideoInput = document.createElement('input'), // 创建刷视频开关 <input>
-			body = document.body; // 获取 body
-		function setPublicStyle(style) {
-			style.position = 'fixed';
-			style.right = '5%';
-			style.background = '#DDD';
-			style.fontFamily = '"Microsoft YaHei"';
-		}
+		}, loopVideoInput = document.createElement('input'); // 创建刷视频开关 <input>
 		{
-			const div = document.createElement('div'), // 创建刷视频开关的容器 <div>
-				label = document.createElement('label'), // 创建刷视频开关的容器 <label>
-				input = loopVideoInput, // 获取刷视频开关 <input>
-				style = div.style; // 获取容器 <div> 的样式
-			if (sessionStorage.getItem('LC_TampermonkeyScripts_ewtScript_loopVideo') === 'true') { // 检测 sessionStorage 中是否储存启用刷视频的信息
-				input.checked = true; // 若储存则启用
-				sessionStorage.removeItem('LC_TampermonkeyScripts_ewtScript_loopVideo'); // 删除储存信息
+			const div = document.createElement('div'), // 创建最外层 <div>
+				style = document.createElement('style'); // 创建 <style>
+			div.id = 'LC_Tampermonkery_ewtScript_Settings'; // 指定 <div> 的 ID
+			{ // 创建并添加刷新按钮
+				const button = document.createElement('button');
+				button.innerHTML = '刷新';
+				button.addEventListener('click', function () {
+					location.reload();
+				});
+				div.appendChild(button);
 			}
-			input.type = 'checkbox'; // 设置样式和 <label> 的内容
-			setPublicStyle(style);
-			style.width = '17rem';
-			style.top = '12%';
-			style.zIndex = '5001';
-			style.borderRadius = '2rem';
-			style.fontSize = '2rem';
-			style.textAlign = 'center';
-			label.innerText = '刷视频模式：';
-			label.style.lineHeight = '4rem';
-			label.appendChild(input); // 将刷视频开关加入容器 <label>
-			div.appendChild(label); // 将容器 <label> 加入容器 <div>
-			body.appendChild(div); // 将容器 <div> 加入 body
-			window.addEventListener('beforeunload', function () {
-				if (input.checked) { // 若刷视频功能已启用则写入 sessionStorage
-					sessionStorage.setItem('LC_TampermonkeyScripts_ewtScript_loopVideo', 'true');
+			{ // 创建并添加刷视频模式配置开关
+				const label = document.createElement('label'), // 创建外层 <label>
+					input = loopVideoInput; // 获取刷视频开关 <input>
+				label.innerText = '刷视频模式：'; // 设置 <label> 的内容、ID、title 以及 <input> 的 type、hidden、ID
+				label.id = 'LC_Tampermonkery_ewtScript_loopVideoLabel';
+				label.title = '右键查看刷视频模式的详情';
+				input.type = 'checkbox'; // 设置样式和 <label> 的内容
+				input.setAttribute('hidden', 'hidden');
+				input.id = 'LC_Tampermonkery_ewtScript_loopVideoInput';
+				if (sessionStorage.getItem('LC_TampermonkeyScripts_ewtScript_loopVideo') === 'true') { // 检测 sessionStorage 中是否储存启用刷视频的信息
+					input.checked = true; // 若检测到储存则启用刷视频功能
+					sessionStorage.removeItem('LC_TampermonkeyScripts_ewtScript_loopVideo'); // 删除储存信息
 				}
-			});
-		}
-		{ // 创建并添加刷新页面的按钮
-			const button = document.createElement('button'), style = button.style;
-			setPublicStyle(style);
-			style.top = '3%';
-			style.zIndex = '5000';
-			style.width = '8rem';
-			style.height = '8rem';
-			style.borderRadius = '50%';
-			style.fontSize = '3rem';
-			style.border = 'none';
-			style.fontWeight = 'bold';
-			button.innerText = '刷新';
-			button.addEventListener('click', function () {
-				location.reload();
-			});
-			body.appendChild(button);
+				window.addEventListener('beforeunload', function () {
+					if (input.checked) { // 若刷视频功能已启用则写入 sessionStorage
+						sessionStorage.setItem('LC_TampermonkeyScripts_ewtScript_loopVideo', 'true');
+					}
+				});
+				label.appendChild(input);
+				{
+					const labelIn = document.createElement('label'); // 创建里层 <label>
+					labelIn.setAttribute('for', 'LC_Tampermonkery_ewtScript_loopVideoInput'); // 设置里层 <label> 的 for 和内容
+					labelIn.innerHTML = '<span>&nbsp;</span>';
+					label.appendChild(labelIn); // 将里层 <label> 加入外层 <label>
+				}
+				label.addEventListener('contextmenu', function (e) {
+					alert('若启用刷视频模式，则视频会不断循环播放。\r\n若禁用刷视频模式，当前视频播放完成后标签页会被关闭。');
+					e.preventDefault(); // 阻止默认事件
+				});
+				div.appendChild(label); // 将外层 <label> 加入 <div>
+			}
+			style.innerHTML = styleText; // 给 <style> 赋值
+			document.body.appendChild(div); // 将 <div> 加入 body
+			document.head.appendChild(style); // 将 <style> 加入 head
+			{ // 创建并添加显示/隐藏控制面板按钮
+				const button = document.createElement('button'), // 创建 <button>
+					style = button.style; // 获取样式
+				button.dataset.showed = 'false';
+				button.innerHTML = '展示控制面板';
+				button.addEventListener('click', function () {
+					if (this.dataset.showed === 'false') {
+						div.style.top = '50%';
+						this.dataset.showed = 'true';
+						this.innerHTML = '隐藏控制面板';
+					} else {
+						div.style.top = '-50rem';
+						this.dataset.showed = 'false';
+						this.innerHTML = '展示控制面板';
+					}
+				});
+				style.top = '5%'; // 一些样式
+				style.right = '3%';
+				style.position = 'fixed';
+				style.width = '15rem';
+				style.height = '4rem';
+				style.background = '#666';
+				style.border = 'none';
+				style.borderRadius = '3rem';
+				style.fontFamily = '"Microsoft YaHei"';
+				style.fontSize = '1.5rem';
+				style.color = 'white';
+				document.body.appendChild(button); // 添加到 body
+			}
 		}
 		function closeThisPage() {
 			window.close(); // 经测试，在 Microsoft Edge 88 下，若是被 JavaScript 或者 <a> 打开的，可以正常关闭
@@ -117,7 +144,7 @@
 					if (video !== null) { // 若 <video> 存在
 						video.volume = 0; // 将视频静音
 						video.addEventListener('play', function () {
-							setTimeout((e) => video.playbackRate = e, 200, 16); // 0.2s 后将视频 16 倍速播放
+							setTimeout(() => video.playbackRate = 16, 200); // 0.2s 后将视频 16 倍速播放
 							intervals.fastPlay_2 = setInterval(function () {
 								if (video.playbackRate != 16) { // 若不是则设置
 									video.playbackRate = 16;
@@ -143,4 +170,62 @@
 			}, 4000);
 		});
 	}
-})(document.querySelector.bind(document));
+})(document.querySelector.bind(document), `\
+#LC_Tampermonkery_ewtScript_Settings {
+	position: fixed;
+	left: 50%;
+	top: -50rem;
+	transform: translate(-50%, -50%);
+	z-index: 5000;
+	background: #111;
+	color: white;
+	padding: 10rem 30rem;
+	min-height: 15rem;
+	min-width: 30rem;
+	box-sizing: content-box;
+	font-family: "Microsoft YaHei";
+	font-size: 2rem;
+	text-align: center;
+	user-select: none;
+	transition: top .5s ease-in-out;
+}
+#LC_Tampermonkery_ewtScript_Settings > button:first-of-type {
+	width: 8rem;
+	height: 4rem;
+	font-size: 2.5rem;
+	background: #444;
+	border: none;
+	border-radius: 1.5rem;
+}
+#LC_Tampermonkery_ewtScript_loopVideoLabel {
+	display: block;
+	margin-top: 1rem;
+	cursor: pointer;
+}
+#LC_Tampermonkery_ewtScript_loopVideoLabel > label {
+	cursor: pointer;
+}
+[for="LC_Tampermonkery_ewtScript_loopVideoInput"] {
+	width: 8rem;
+	display: inline-block;
+	background: #444;
+	border-radius: 2rem;
+	text-align: left;
+	transition: background .3s ease-in-out;
+}
+[for="LC_Tampermonkery_ewtScript_loopVideoInput"] span {
+	background: white;
+	display: inline-block;
+	width: 2rem;
+	height: 2rem;
+	line-height: 2rem;
+	border-radius: 50%;
+	margin-left: 0.55rem;
+	transition: margin-left .3s ease-in-out;
+}
+#LC_Tampermonkery_ewtScript_loopVideoInput:checked + label {
+	background: green;
+}
+#LC_Tampermonkery_ewtScript_loopVideoInput:checked + label span {
+	margin-left: 5.55rem;
+}`);
