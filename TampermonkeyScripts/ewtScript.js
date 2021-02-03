@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.4-beta.3
+// @version		1.2.5-beta.2
 // @description	升学 E 网通广告跳过及视频极速播放
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
@@ -12,10 +12,12 @@
 /* 公开更新记录
 * 1.2：使用 TypeScript 重写，减少错误发生的可能。
 * 1.2.1：增加视频静音功能。
-* 1.2.3-beta-2：增加刷新按钮、增加课程错误时自动退出功能。
-* 1.2.4-beta：增加“刷视频”功能，完善注释。
+* 1.2.3-beta-2：增加刷新按钮；增加课程错误时自动退出功能。
+* 1.2.4-beta：增加“刷视频”功能；完善注释。
 * 1.2.4-beta.2：增加“刷视频”功能状态临时储存功能。
-* 1.2.4-beta.3：优化“刷视频”功能逻辑，改为本地储存。
+* 1.2.4-beta.3：优化“刷视频”功能逻辑；改为本地储存。
+* 1.2.5-beta：修复增加的按钮定位问题；修改储存状态逻辑以防止多标签页干扰。
+* 1.2.5-beta.2：检测看课进度上传失败的错误提示，若出现则刷新页面；优化按钮添加顺序。
 */
 
 (function ($) {
@@ -26,40 +28,60 @@
 		const intervals = {
 			removeAD: 0,
 			fastPlay: 0,
-			fastPlay_2: 0
+			fastPlay_2: 0,
+			uploadError: 0
 		}, loopVideoInput = document.createElement('input'), // 创建刷视频开关 <input>
 			body = document.body; // 获取 body
+		function setPublicStyle(style) {
+			style.position = 'fixed';
+			style.right = '5%';
+			style.background = '#DDD';
+			style.fontFamily = '"Microsoft YaHei"';
+		}
 		{
 			const div = document.createElement('div'), // 创建刷视频开关的容器 <div>
 				label = document.createElement('label'), // 创建刷视频开关的容器 <label>
 				input = loopVideoInput, // 获取刷视频开关 <input>
 				style = div.style; // 获取容器 <div> 的样式
-			if (localStorage.getItem('LC_TampermonkeyScripts_ewtScript_loopVideo') === 'true') { // 检测 localStorage 中是否储存启用刷视频的信息
+			if (sessionStorage.getItem('LC_TampermonkeyScripts_ewtScript_loopVideo') === 'true') { // 检测 sessionStorage 中是否储存启用刷视频的信息
 				input.checked = true; // 若储存则启用
+				sessionStorage.removeItem('LC_TampermonkeyScripts_ewtScript_loopVideo'); // 删除储存信息
 			}
 			input.type = 'checkbox'; // 设置样式和 <label> 的内容
+			setPublicStyle(style);
 			style.width = '17rem';
-			style.position = 'absolute';
-			style.top = '15%';
-			style.right = '5%';
+			style.top = '12%';
 			style.zIndex = '5001';
-			style.fontFamily = '"Microsoft YaHei"';
 			style.borderRadius = '2rem';
 			style.fontSize = '2rem';
-			style.background = '#DDD';
 			style.textAlign = 'center';
 			label.innerText = '刷视频模式：';
 			label.style.lineHeight = '4rem';
 			label.appendChild(input); // 将刷视频开关加入容器 <label>
 			div.appendChild(label); // 将容器 <label> 加入容器 <div>
 			body.appendChild(div); // 将容器 <div> 加入 body
-			input.addEventListener('change', function () {
-				if (this.checked) { // 若启用则储存信息
-					localStorage.setItem('LC_TampermonkeyScripts_ewtScript_loopVideo', 'true');
-				} else { // 若禁用则删除信息
-					localStorage.removeItem('LC_TampermonkeyScripts_ewtScript_loopVideo');
+			window.addEventListener('beforeunload', function () {
+				if (input.checked) { // 若刷视频功能已启用则写入 sessionStorage
+					sessionStorage.setItem('LC_TampermonkeyScripts_ewtScript_loopVideo', 'true');
 				}
 			});
+		}
+		{ // 创建并添加刷新页面的按钮
+			const button = document.createElement('button'), style = button.style;
+			setPublicStyle(style);
+			style.top = '3%';
+			style.zIndex = '5000';
+			style.width = '8rem';
+			style.height = '8rem';
+			style.borderRadius = '50%';
+			style.fontSize = '3rem';
+			style.border = 'none';
+			style.fontWeight = 'bold';
+			button.innerText = '刷新';
+			button.addEventListener('click', function () {
+				location.reload();
+			});
+			body.appendChild(button);
 		}
 		function closeThisPage() {
 			window.close(); // 经测试，在 Microsoft Edge 88 下，若是被 JavaScript 或者 <a> 打开的，可以正常关闭
@@ -113,27 +135,12 @@
 						clearInterval(intervals.fastPlay); // 停止循环检测学习视频 <video> 是否存在
 					}
 				}, 500);
+				intervals.uploadError = setInterval(function () {
+					if ($('img[alt="课程同步失败了"]') !== null) { // 若出现则刷新页面
+						location.reload();
+					}
+				}, 2500);
 			}, 4000);
-			{ // 创建并添加刷新页面的按钮
-				const button = document.createElement('button'), style = button.style;
-				style.position = 'absolute';
-				style.top = '3%';
-				style.right = '5%';
-				style.zIndex = '5000';
-				style.width = '8rem';
-				style.height = '8rem';
-				style.fontFamily = '"Microsoft YaHei"';
-				style.borderRadius = '50%';
-				style.fontSize = '3rem';
-				style.border = 'none';
-				style.background = '#DDD';
-				style.fontWeight = 'bold';
-				button.innerText = '刷新';
-				button.addEventListener('click', function () {
-					location.reload();
-				});
-				body.appendChild(button);
-			}
 		});
 	}
 })(document.querySelector.bind(document));
