@@ -1,13 +1,15 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.6-alpha.3
+// @version		1.2.7-alpha.2
 // @description	升学 E 网通广告跳过及视频极速播放
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
 // @icon		https://static.lcwebsite.cn/favicon.svg
 // @license		MIT License
 // ==/UserScript==
+
+// GitHub 仓库地址：https://github.com/lc6464/ewtScripts
 
 /* 公开更新记录
 * 1.2：使用 TypeScript 重写，减少错误发生的可能。
@@ -21,6 +23,8 @@
 * 1.2.6-alpha：将所有配置选项整合到一个小页面。
 * 1.2.6-alpha.2：完善配置选项页面功能。
 * 1.2.6-alpha.3：修复一些问题。
+* 1.2.7-alpha：修复右上角控制按钮及控制面板 z-index 问题；调整右上角控制按钮字体大小。	GitHub #1
+* 1.2.7-alpha.2：增加功能：自动调整清晰度为“清晰”以降低网络占用、暂停视频答题窗口自动确定。	GitHub #1
 */
 
 (function ($, styleText) {
@@ -32,7 +36,8 @@
 			removeAD: 0,
 			fastPlay: 0,
 			fastPlay_2: 0,
-			uploadError: 0
+			uploadError: 0,
+			quality: 0
 		}, loopVideoInput = document.createElement('input'); // 创建刷视频开关 <input>
 		{
 			const div = document.createElement('div'), // 创建最外层 <div>
@@ -105,8 +110,9 @@
 				style.border = 'none';
 				style.borderRadius = '3rem';
 				style.fontFamily = '"Microsoft YaHei"';
-				style.fontSize = '1.5rem';
+				style.fontSize = '1.6rem';
 				style.color = 'white';
+				style.zIndex = '6001';
 				document.body.appendChild(button); // 添加到 body
 			}
 		}
@@ -136,6 +142,7 @@
 						button.click();
 					}
 					clearInterval(intervals.removeAD); // 取消循环检测广告 <video> 是否存在
+					intervals.removeAD = 0;
 				}
 			}, 500);
 			setTimeout(function () {
@@ -144,22 +151,50 @@
 					if (video !== null) { // 若 <video> 存在
 						video.volume = 0; // 将视频静音
 						video.addEventListener('play', function () {
-							setTimeout(() => video.playbackRate = 16, 200); // 0.2s 后将视频 16 倍速播放
+							setTimeout(() => video.playbackRate = 16, 500); // 0.5s 后将视频 16 倍速播放
+							intervals.quality = setInterval(function () {
+								if ($('.ccH5hdul li') !== null) { // 若清晰度选项卡存在
+									const selected = $('.ccH5hdul li.selected'); // 获取已选择选项
+									if (selected !== null) { // 若已选择选项存在
+										if (selected.innerText !== '清晰') { // 若清晰度不为清晰
+											const button = $('.ccH5hdul li:last-of-type');
+											if (button !== null) {
+												button.click(); // 将清晰度设为清晰
+											}
+										} else if (selected.innerText === '清晰') {
+											clearInterval(intervals.quality); // 若清晰度为清晰则停止循环
+											intervals.quality = 0;
+										}
+									}
+								}
+							}, 500);
 							intervals.fastPlay_2 = setInterval(function () {
 								if (video.playbackRate != 16) { // 若不是则设置
 									video.playbackRate = 16;
 								} else { // 若是则停止循环检测视频播放速率
 									clearInterval(intervals.fastPlay_2);
+									intervals.fastPlay_2 = 0;
 								}
 							}, 1000);
 						});
-						video.addEventListener('pause', () => setTimeout(video.play.bind(video), 250)); // 视频暂停后 250ms 继续播放
+						video.addEventListener('pause', function () {
+							const item = $('.course_point_question_item'), // 获取选项和确定按钮
+								button = $('.ant-btn.ant-btn-primary.ant-btn-block');
+							if (item !== null) { // 检测暂停回答问题弹窗是否存在
+								item.click(); // 若存在则点击答题结束并确定
+								if (button !== null) {
+									setTimeout(() => button.click(), 10);
+								}
+							}
+							setTimeout(video.play.bind(video), 250);
+						}); // 视频暂停后 250ms 继续播放
 						video.addEventListener('ended', function () {
 							if (!loopVideoInput.checked) { // 若关闭刷视频模式才关闭页面
 								closeThisPage();
 							}
 						});
 						clearInterval(intervals.fastPlay); // 停止循环检测学习视频 <video> 是否存在
+						intervals.fastPlay_2 = 0;
 					}
 				}, 500);
 				intervals.uploadError = setInterval(function () {
@@ -176,7 +211,7 @@
 	left: 50%;
 	top: -50rem;
 	transform: translate(-50%, -50%);
-	z-index: 5000;
+	z-index: 6000;
 	background: #111;
 	color: white;
 	padding: 10rem 30rem;
