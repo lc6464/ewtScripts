@@ -1,14 +1,13 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.7-alpha.2
+// @version		1.2.7-alpha.3
 // @description	升学 E 网通广告跳过及视频极速播放
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
 // @icon		https://static.lcwebsite.cn/favicon.svg
 // @license		MIT License
 // ==/UserScript==
-
 // GitHub 仓库地址：https://github.com/lc6464/ewtScripts
 
 /* 公开更新记录
@@ -25,6 +24,7 @@
 * 1.2.6-alpha.3：修复一些问题。
 * 1.2.7-alpha：修复右上角控制按钮及控制面板 z-index 问题；调整右上角控制按钮字体大小。	GitHub #1
 * 1.2.7-alpha.2：增加功能：自动调整清晰度为“清晰”以降低网络占用、暂停视频答题窗口自动确定。	GitHub #1
+* 1.2.7-alpha.3：优化调整清晰度逻辑。
 */
 
 (function ($, styleText) {
@@ -152,22 +152,6 @@
 						video.volume = 0; // 将视频静音
 						video.addEventListener('play', function () {
 							setTimeout(() => video.playbackRate = 16, 500); // 0.5s 后将视频 16 倍速播放
-							intervals.quality = setInterval(function () {
-								if ($('.ccH5hdul li') !== null) { // 若清晰度选项卡存在
-									const selected = $('.ccH5hdul li.selected'); // 获取已选择选项
-									if (selected !== null) { // 若已选择选项存在
-										if (selected.innerText !== '清晰') { // 若清晰度不为清晰
-											const button = $('.ccH5hdul li:last-of-type');
-											if (button !== null) {
-												button.click(); // 将清晰度设为清晰
-											}
-										} else if (selected.innerText === '清晰') {
-											clearInterval(intervals.quality); // 若清晰度为清晰则停止循环
-											intervals.quality = 0;
-										}
-									}
-								}
-							}, 500);
 							intervals.fastPlay_2 = setInterval(function () {
 								if (video.playbackRate != 16) { // 若不是则设置
 									video.playbackRate = 16;
@@ -195,6 +179,22 @@
 						});
 						clearInterval(intervals.fastPlay); // 停止循环检测学习视频 <video> 是否存在
 						intervals.fastPlay_2 = 0;
+					}
+				}, 500);
+				intervals.quality = setInterval(function () {
+					if ($('.ccH5hdul li') !== null) { // 若清晰度选项卡存在
+						const selected = $('.ccH5hdul li.selected'); // 获取已选择选项
+						if (selected !== null) { // 若已选择选项存在
+							if (selected.innerText !== '清晰') { // 若清晰度不为清晰
+								const button = $('.ccH5hdul li:last-of-type');
+								if (button !== null) {
+									button.click(); // 将清晰度设为清晰
+								}
+							} else if (selected.innerText === '清晰') {
+								clearInterval(intervals.quality); // 若清晰度为清晰则停止循环
+								intervals.quality = 0;
+							}
+						}
 					}
 				}, 500);
 				intervals.uploadError = setInterval(function () {
