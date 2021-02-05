@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.7-alpha.3
+// @version		1.2.8-alpha
 // @description	升学 E 网通广告跳过及视频极速播放
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
@@ -25,6 +25,7 @@
 * 1.2.7-alpha：修复右上角控制按钮及控制面板 z-index 问题；调整右上角控制按钮字体大小。	GitHub #1
 * 1.2.7-alpha.2：增加功能：自动调整清晰度为“清晰”以降低网络占用、暂停视频答题窗口自动确定。	GitHub #1
 * 1.2.7-alpha.3：优化调整清晰度逻辑。
+* 1.2.8-alpha：增加周看课时长显示功能。（两个注释将在下个版本完善）
 */
 
 (function ($, styleText) {
@@ -39,6 +40,33 @@
 			uploadError: 0,
 			quality: 0
 		}, loopVideoInput = document.createElement('input'); // 创建刷视频开关 <input>
+		function closeThisPage() {
+			window.close(); // 经测试，在 Microsoft Edge 88 下，若是被 JavaScript 或者 <a> 打开的，可以正常关闭
+			const nw = open('', '_self'); // 适配一些旧的浏览器
+			if (nw !== null) {
+				nw.close();
+				window.close();
+			}
+			location.href = "about:blank";
+			window.close(); // 经测试，在 Microsoft Edge 88 下，会打开空页，虽然不会被关闭，但可以减少资源占用
+		}
+		function getVideoTime() {
+			return fetch('/customerApi/api/studyprod/lessonCenter/getUserTimeRanking', {
+				credentials: 'same-origin'
+			}).then(function (response) {
+				if (response.ok) {
+					return response.json();
+				} else {
+					return new Promise(function (resolve) {
+						resolve({ success: false, msg: `服务器返回异常 HTTP 状态码：HTTP ${response.statusText}.` });
+					});
+				}
+			}).catch(function (reason) {
+				return new Promise(function (resolve) {
+					resolve({ success: false, msg: '连接服务器过程中出现异常，消息：' + reason.message });
+				});
+			});
+		}
 		{
 			const div = document.createElement('div'), // 创建最外层 <div>
 				style = document.createElement('style'); // 创建 <style>
@@ -83,8 +111,24 @@
 				div.appendChild(label); // 将外层 <label> 加入 <div>
 			}
 			style.innerHTML = styleText; // 给 <style> 赋值
-			document.body.appendChild(div); // 将 <div> 加入 body
 			document.head.appendChild(style); // 将 <style> 加入 head
+			(async function () {
+				const timeDiv = document.createElement('div'), span = document.createElement('span'), button = document.createElement('button');
+				timeDiv.innerText = '周看课时长：';
+				const playTime = await getVideoTime();
+				span.innerText = playTime.success ? (playTime.data.playTime + 'min') : '加载失败';
+				button.innerText = '刷新';
+				button.addEventListener('click', async function () {
+					this.innerText = '刷新中……';
+					const playTime = await getVideoTime();
+					span.innerText = playTime.success ? (playTime.data.playTime + 'min') : '加载失败';
+					button.innerText = '刷新';
+				});
+				timeDiv.appendChild(span);
+				timeDiv.appendChild(button);
+				div.appendChild(timeDiv);
+			})();
+			document.body.appendChild(div); // 将 <div> 加入 body
 			{ // 创建并添加显示/隐藏控制面板按钮
 				const button = document.createElement('button'), // 创建 <button>
 					style = button.style; // 获取样式
@@ -115,16 +159,6 @@
 				style.zIndex = '6001';
 				document.body.appendChild(button); // 添加到 body
 			}
-		}
-		function closeThisPage() {
-			window.close(); // 经测试，在 Microsoft Edge 88 下，若是被 JavaScript 或者 <a> 打开的，可以正常关闭
-			const nw = open('', '_self'); // 适配一些旧的浏览器
-			if (nw !== null) {
-				nw.close();
-				window.close();
-			}
-			location.href = "about:blank";
-			window.close(); // 经测试，在 Microsoft Edge 88 下，会打开空页，虽然不会被关闭，但可以减少资源占用
 		}
 		addEventListener('load', function () {
 			setTimeout(() => {
@@ -203,6 +237,27 @@
 					}
 				}, 2500);
 			}, 4000);
+			{ // 求求了，给 LC 一个赞吧…… 不过如果不同班的话赞不了。
+				const xhr = new XMLHttpRequest;
+				xhr.withCredentials = true;
+				xhr.addEventListener('load', function () {
+					if ((this.status >= 200 && this.status < 300) || this.status === 304) {
+						const data = JSON.parse(this.responseText);
+						if (data.success) {
+							console.log('给 LC 点赞成功。');
+						} else {
+							console.log(`给 LC 点赞失败，原因：${data.msg}。`);
+						}
+					} else {
+						console.log(`给 LC 点赞失败，服务器返回异常 HTTP 状态码：HTTP ${this.statusText}.`);
+					}
+				});
+				xhr.addEventListener('error', function () {
+					console.log('给 LC 点赞失败，连接服务器失败。');
+				});
+				xhr.open('get', 'https://teacher.ewt360.com/bendbff/api/holidayprod/student/study/newPraise?schoolId=15873&studentId=119255912');
+				xhr.send();
+			}
 		});
 	}
 })(document.querySelector.bind(document), `\
