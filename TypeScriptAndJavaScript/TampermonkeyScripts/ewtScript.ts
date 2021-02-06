@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.9-alpha.2
+// @version		1.2.10-beta
 // @description	升学 E 网通广告跳过及视频极速播放。
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
@@ -29,6 +29,7 @@
 * 1.2.8-alpha.2：完善注释（1.2.8-alpha 及此版本未经验证，可能会不稳定或存在较严重的 bug）。
 * 1.2.9-alpha：优化获取看课时长逻辑，优化看课时长显示的样式。
 * 1.2.9-alpha.2：修复看课时长样式问题。
+* 1.2.10-beta：优化获取周看课时长逻辑，为控制面板添加标题，通过一段时间的稳定性测试。
 */
 
 (function ($, styleText) {
@@ -55,22 +56,23 @@
 					credentials: 'same-origin' // 发送验证信息 (cookies)
 				});
 				if (response.ok) { // 判断是否出现 HTTP 异常
-					return response.json(); // 如果正常，则获取 JSON 数据
+					return await response.json(); // 如果正常，则获取 JSON 数据
 				} else { // 若不正常，返回异常信息
-					return new Promise(function (resolve) { // 这里用 Promise 的原因是 response.json 返回的是 Promise，方便统一处理，下面那个 Promise 也是同理
-						resolve({ success: false, msg: `服务器返回异常 HTTP 状态码：HTTP ${response.statusText}.` });
-					});
+					return { success: false, msg: `服务器返回异常 HTTP 状态码：HTTP ${response.status} ${response.statusText}.` };
 				}
-			} catch (reason) { // 若与服务器连接异常
-				return await new Promise(function (resolve) { // 使用 Promise 的原因同上
-					resolve({ success: false, msg: '连接服务器过程中出现异常，消息：' + reason.message });
-				});
+			} catch (reason) { // 若与服务器连接异常，返回异常信息
+				return { success: false, msg: '连接服务器过程中出现异常，消息：' + reason.message };
 			}
 		}
 		{
 			const div: HTMLDivElement = document.createElement('div'), // 创建最外层 <div>
-				style: HTMLStyleElement = document.createElement('style'); // 创建 <style>
+				style: HTMLStyleElement = document.createElement('style'), // 创建 <style>
+				h2: HTMLHeadingElement = document.createElement('h2'); // 创建 <h2> 标题
 			div.id = 'LC_Tampermonkery_ewtScript_Settings'; // 指定 <div> 的 ID
+			h2.style.marginBottom = '1.2rem'; // 设定标题的内容和样式
+			h2.style.color = 'white';
+			h2.innerText = 'ewtScript 控制面板';
+			div.appendChild(h2); // 添加标题
 			{ // 创建并添加刷新按钮
 				const button: HTMLButtonElement = document.createElement('button');
 				button.innerHTML = '刷新';
