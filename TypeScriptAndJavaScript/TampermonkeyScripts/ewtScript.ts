@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.9-alpha
+// @version		1.2.9-alpha.2
 // @description	升学 E 网通广告跳过及视频极速播放。
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
@@ -28,6 +28,7 @@
 * 1.2.8-alpha：增加周看课时长显示功能。（两个注释将在下个版本完善）
 * 1.2.8-alpha.2：完善注释（1.2.8-alpha 及此版本未经验证，可能会不稳定或存在较严重的 bug）。
 * 1.2.9-alpha：优化获取看课时长逻辑，优化看课时长显示的样式。
+* 1.2.9-alpha.2：修复看课时长样式问题。
 */
 
 (function ($, styleText) {
@@ -117,7 +118,7 @@
 					span: HTMLSpanElement = document.createElement('span'),
 					button: HTMLButtonElement = document.createElement('button');
 				timeDiv.innerText = '周看课时长：'; // 设置 <div> 内容
-				timeDiv.style.top = '0.8rem'; // 设置 <div> 样式
+				timeDiv.style.marginTop = '0.8rem'; // 设置 <div> 样式
 				span.innerText = '加载中';
 				(async function () { // 异步获取时长防止阻塞
 					const playTime = await getVideoTime(); // 获取时长
