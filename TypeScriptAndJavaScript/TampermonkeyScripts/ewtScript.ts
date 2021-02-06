@@ -1,8 +1,8 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.8-alpha
-// @description	升学 E 网通广告跳过及视频极速播放
+// @version		1.2.8-alpha.2
+// @description	升学 E 网通广告跳过及视频极速播放。
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
 // @icon		https://static.lcwebsite.cn/favicon.svg
@@ -26,6 +26,7 @@
 * 1.2.7-alpha.2：增加功能：自动调整清晰度为“清晰”以降低网络占用、暂停视频答题窗口自动确定。	GitHub #1
 * 1.2.7-alpha.3：优化调整清晰度逻辑。
 * 1.2.8-alpha：增加周看课时长显示功能。（两个注释将在下个版本完善）
+* 1.2.8-alpha.2：完善注释（1.2.8-alpha 及此版本未经验证，可能会不稳定或存在较严重的 bug）。
 */
 
 (function ($, styleText) {
@@ -46,19 +47,19 @@
 			if (nw !== null) { nw.close(); window.close(); }
 			location.href = "about:blank"; window.close(); // 经测试，在 Microsoft Edge 88 下，会打开空页，虽然不会被关闭，但可以减少资源占用
 		}
-		function getVideoTime() { // 获取周看课时长（注释会在下一个版本完善）
-			return fetch('/customerApi/api/studyprod/lessonCenter/getUserTimeRanking', {
-				credentials: 'same-origin'
-			}).then(function (response) {
-				if (response.ok) {
-					return response.json();
-				} else {
-					return new Promise(function (resolve) {
+		function getVideoTime() { // 获取周看课时长
+			return fetch('/customerApi/api/studyprod/lessonCenter/getUserTimeRanking', { // fetch 看课时长 API
+				credentials: 'same-origin' // 发送验证信息 (cookies)
+			}).then(function (response) { // 接收到服务器返回数据后执行
+				if (response.ok) { // 判断是否出现 HTTP 异常
+					return response.json(); // 如果正常，则获取 JSON 数据
+				} else { // 若不正常，返回异常信息
+					return new Promise(function (resolve) { // 这里用 Promise 的原因是 response.json 返回的是 Promise，方便统一处理，下面那个 Promise 也是同理
 						resolve({ success: false, msg: `服务器返回异常 HTTP 状态码：HTTP ${response.statusText}.` });
 					});
 				}
-			}).catch(function (reason) {
-				return new Promise(function (resolve) {
+			}).catch(function (reason) { // 若与服务器连接异常
+				return new Promise(function (resolve) { // 使用 Promise 的原因同上
 					resolve({ success: false, msg: '连接服务器过程中出现异常，消息：' + reason.message });
 				});
 			});
@@ -70,6 +71,7 @@
 			{ // 创建并添加刷新按钮
 				const button: HTMLButtonElement = document.createElement('button');
 				button.innerHTML = '刷新';
+				button.style.width = '8rem';
 				button.addEventListener('click', function () {
 					location.reload();
 				});
@@ -108,23 +110,30 @@
 			}
 			style.innerHTML = styleText; // 给 <style> 赋值
 			document.head.appendChild(style); // 将 <style> 加入 head
-			(async function () { // 增加获取周看课时长显示 <div>（注释将在下个版本完善）
-				const timeDiv: HTMLDivElement = document.createElement('div'),
+			(async function () { // 增加获取周看课时长显示 <div>
+				const timeDiv: HTMLDivElement = document.createElement('div'), // 创建三个元素
 					span: HTMLSpanElement = document.createElement('span'),
 					button: HTMLButtonElement = document.createElement('button');
-				timeDiv.innerText = '周看课时长：';
-				const playTime = await getVideoTime();
-				span.innerText = playTime.success ? (playTime.data.playTime + 'min') : '加载失败';
-				button.innerText = '刷新';
-				button.addEventListener('click', async function () {
-					this.innerText = '刷新中……';
-					const playTime = await getVideoTime();
-					span.innerText = playTime.success ? (playTime.data.playTime + 'min') : '加载失败';
-					button.innerText = '刷新';
+				timeDiv.innerText = '周看课时长：'; // 设置 <div> 内容
+				const playTime = await getVideoTime(); // 获取时长
+				span.innerText = playTime.success ? (playTime.data.playTime + 'min') : '加载失败'; // 将时长写入 <span>
+				button.innerText = '刷新'; // 设置按钮内容
+				button.style.height = '3.5rem';
+				button.style.fontSize = '2rem';
+				button.style.width = '6rem';
+				button.addEventListener('click', async function () { // 按钮按下事件（刷新时长）
+					this.innerText = '刷新中……'; // 更改按钮内容
+					button.style.width = '8rem';
+					button.style.fontSize = '1.5rem';
+					const playTime = await getVideoTime(); // 获取时长
+					span.innerText = playTime.success ? (playTime.data.playTime + 'min') : '加载失败'; // 将时长写入 <span>
+					button.innerText = '刷新'; // 更改按钮内容
+					button.style.fontSize = '2rem';
+					button.style.width = '6rem';
 				});
-				timeDiv.appendChild(span);
-				timeDiv.appendChild(button);
-				div.appendChild(timeDiv);
+				timeDiv.appendChild(span); // 先将时长 <span> 加入 <div>
+				timeDiv.appendChild(button); // 再将刷新按钮加入 <div>
+				div.appendChild(timeDiv); // 将 <div> 添加进控制面板 <div>
 			})();
 			document.body.appendChild(div); // 将 <div> 加入 body
 			{ // 创建并添加显示/隐藏控制面板按钮
@@ -278,13 +287,12 @@
 	user-select: none;
 	transition: top .5s ease-in-out;
 }
-#LC_Tampermonkery_ewtScript_Settings > button:first-of-type {
-	width: 8rem;
-	height: 4rem;
+#LC_Tampermonkery_ewtScript_Settings button {
 	font-size: 2.5rem;
 	background: #444;
 	border: none;
 	border-radius: 1.5rem;
+	height: 4rem;
 }
 #LC_Tampermonkery_ewtScript_loopVideoLabel {
 	display: block;
