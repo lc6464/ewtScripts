@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.10-beta
+// @version		1.2.10-beta.2
 // @description	升学 E 网通广告跳过及视频极速播放。
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
@@ -30,6 +30,7 @@
 * 1.2.9-alpha：优化获取看课时长逻辑，优化看课时长显示的样式。
 * 1.2.9-alpha.2：修复看课时长样式问题。
 * 1.2.10-beta：优化获取周看课时长逻辑，为控制面板添加标题，通过一段时间的稳定性测试。
+* 1.2.10-beta.2：增加无感刷新时长功能，优化控制面板样式。
 */
 
 (function ($, styleText) {
@@ -69,7 +70,8 @@
 				style: HTMLStyleElement = document.createElement('style'), // 创建 <style>
 				h2: HTMLHeadingElement = document.createElement('h2'); // 创建 <h2> 标题
 			div.id = 'LC_Tampermonkery_ewtScript_Settings'; // 指定 <div> 的 ID
-			h2.style.marginBottom = '1.2rem'; // 设定标题的内容和样式
+			h2.style.marginBottom = '1.8rem'; // 设定标题的内容和样式
+			h2.style.fontSize = '2.8rem';
 			h2.style.color = 'white';
 			h2.innerText = 'ewtScript 控制面板';
 			div.appendChild(h2); // 添加标题
@@ -145,38 +147,46 @@
 				timeDiv.appendChild(span); // 先将时长 <span> 加入 <div>
 				timeDiv.appendChild(button); // 再将刷新按钮加入 <div>
 				div.appendChild(timeDiv); // 将 <div> 添加进控制面板 <div>
+				async function noSenseRefreshTime() { // 无感时长刷新功能，异步防止阻塞
+					button.innerText = '刷新中……'; // 更改刷新按钮内容
+					const playTime = await getVideoTime(); // 获取时长
+					span.innerText = playTime.success ? (playTime.data.playTime + 'min') : span.innerText; // 将时长写入 <span>
+					button.innerText = '刷新'; // 更改刷新按钮内容
+				}
+				setInterval(noSenseRefreshTime, 7500);
+				{ // 创建并添加显示/隐藏控制面板按钮
+					const buttonIn: HTMLButtonElement = document.createElement('button'), // 创建 <button>
+						style = buttonIn.style; // 获取样式
+					buttonIn.dataset.showed = 'false';
+					buttonIn.innerHTML = '展示控制面板';
+					buttonIn.addEventListener('click', function () { // 显示和隐藏的逻辑
+						if (this.dataset.showed === 'false') {
+							div.style.top = '50%';
+							this.dataset.showed = 'true';
+							this.innerHTML = '隐藏控制面板';
+							noSenseRefreshTime();
+						} else {
+							div.style.top = '-50rem';
+							this.dataset.showed = 'false';
+							this.innerHTML = '展示控制面板';
+						}
+					});
+					style.top = '5%'; // 一些样式
+					style.right = '3%';
+					style.position = 'fixed';
+					style.width = '15rem';
+					style.height = '4rem';
+					style.background = '#666';
+					style.border = 'none';
+					style.borderRadius = '3rem';
+					style.fontFamily = '"Microsoft YaHei"';
+					style.fontSize = '1.6rem';
+					style.color = 'white';
+					style.zIndex = '6001';
+					document.body.appendChild(buttonIn); // 添加到 body
+				}
 			}
 			document.body.appendChild(div); // 将 <div> 加入 body
-			{ // 创建并添加显示/隐藏控制面板按钮
-				const button: HTMLButtonElement = document.createElement('button'), // 创建 <button>
-					style = button.style; // 获取样式
-				button.dataset.showed = 'false';
-				button.innerHTML = '展示控制面板';
-				button.addEventListener('click', function () { // 显示和隐藏的逻辑
-					if (this.dataset.showed === 'false') {
-						div.style.top = '50%';
-						this.dataset.showed = 'true';
-						this.innerHTML = '隐藏控制面板';
-					} else {
-						div.style.top = '-50rem';
-						this.dataset.showed = 'false';
-						this.innerHTML = '展示控制面板';
-					}
-				});
-				style.top = '5%'; // 一些样式
-				style.right = '3%';
-				style.position = 'fixed';
-				style.width = '15rem';
-				style.height = '4rem';
-				style.background = '#666';
-				style.border = 'none';
-				style.borderRadius = '3rem';
-				style.fontFamily = '"Microsoft YaHei"';
-				style.fontSize = '1.6rem';
-				style.color = 'white';
-				style.zIndex = '6001';
-				document.body.appendChild(button); // 添加到 body
-			}
 		}
 		addEventListener('load', function () { // 页面加载完成后执行的代码
 			setTimeout(() => { // 0.7s 后检测是否有错误提示，如果有则关闭标签页
