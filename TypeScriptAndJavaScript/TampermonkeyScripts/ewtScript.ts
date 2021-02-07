@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.10-beta.2
+// @version		1.2.10-beta.3
 // @description	升学 E 网通广告跳过及视频极速播放。
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
@@ -31,6 +31,7 @@
 * 1.2.9-alpha.2：修复看课时长样式问题。
 * 1.2.10-beta：优化获取周看课时长逻辑，为控制面板添加标题，通过一段时间的稳定性测试。
 * 1.2.10-beta.2：增加无感刷新时长功能，优化控制面板样式。
+* 1.2.10-beta.3：无感刷新时按钮样式出现的 bug 修复，延长无感刷新间隔。
 */
 
 (function ($, styleText) {
@@ -149,11 +150,15 @@
 				div.appendChild(timeDiv); // 将 <div> 添加进控制面板 <div>
 				async function noSenseRefreshTime() { // 无感时长刷新功能，异步防止阻塞
 					button.innerText = '刷新中……'; // 更改刷新按钮内容
+					button.style.width = '8rem'; // 更改按钮样式
+					button.style.fontSize = '1.5rem';
 					const playTime = await getVideoTime(); // 获取时长
 					span.innerText = playTime.success ? (playTime.data.playTime + 'min') : span.innerText; // 将时长写入 <span>
 					button.innerText = '刷新'; // 更改刷新按钮内容
+					button.style.fontSize = '2rem'; // 更改按钮样式
+					button.style.width = '6rem';
 				}
-				setInterval(noSenseRefreshTime, 7500);
+				setInterval(noSenseRefreshTime, 10000);
 				{ // 创建并添加显示/隐藏控制面板按钮
 					const buttonIn: HTMLButtonElement = document.createElement('button'), // 创建 <button>
 						style = buttonIn.style; // 获取样式
