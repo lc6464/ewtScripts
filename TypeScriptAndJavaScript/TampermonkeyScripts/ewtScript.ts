@@ -1,7 +1,7 @@
 // ==UserScript==
 // @name		升学 E 网通广告跳过
 // @namespace	https://lcwebsite.cn/
-// @version		1.2.10-beta.3
+// @version		1.2.10-beta.4
 // @description	升学 E 网通广告跳过及视频极速播放。
 // @author		LC
 // @match		http*://web.ewt360.com/site-study/*
@@ -32,6 +32,7 @@
 * 1.2.10-beta：优化获取周看课时长逻辑，为控制面板添加标题，通过一段时间的稳定性测试。
 * 1.2.10-beta.2：增加无感刷新时长功能，优化控制面板样式。
 * 1.2.10-beta.3：无感刷新时按钮样式出现的 bug 修复，延长无感刷新间隔。
+* 1.2.10-beta.4：样式修复，刷新页面内容修改。
 */
 
 (function ($, styleText) {
@@ -78,8 +79,8 @@
 			div.appendChild(h2); // 添加标题
 			{ // 创建并添加刷新按钮
 				const button: HTMLButtonElement = document.createElement('button');
-				button.innerHTML = '刷新';
-				button.style.width = '8rem';
+				button.innerHTML = '刷新页面';
+				button.style.width = '15rem';
 				button.addEventListener('click', function () {
 					location.reload();
 				});
@@ -303,9 +304,9 @@
 	z-index: 6000;
 	background: #111;
 	color: white;
-	padding: 10rem 30rem;
+	padding: 10rem 20rem;
 	min-height: 15rem;
-	min-width: 30rem;
+	min-width: 40rem;
 	box-sizing: content-box;
 	font-family: "Microsoft YaHei";
 	font-size: 2rem;
