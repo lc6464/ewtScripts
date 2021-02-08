@@ -1,4 +1,17 @@
-function EwtKeepLogin() {
+// ==UserScript==
+// @name		升学 E 网通保持登录
+// @namespace	https://lcwebsite.cn/
+// @version		0.1.0
+// @description	升学 E 网通保持登录。
+// @author		LC
+// @match		http*://*.ewt360.com/*
+// @icon		https://static.lcwebsite.cn/favicon.svg
+// @license		MIT License
+// ==/UserScript==
+// GitHub 仓库地址：https://github.com/lc6464/ewtPrograms
+
+(function () {
+	"use strict";
 	async function getVideoTime() { // 获取周看课时长
 		try {
 			const response = await fetch('/customerApi/api/studyprod/lessonCenter/getUserTimeRanking', { // fetch 看课时长 API
@@ -21,4 +34,4 @@ function EwtKeepLogin() {
 			console.log('保持登录失败，原因：' + result.msg);
 		}
 	}, 5500);
-}
+})();
