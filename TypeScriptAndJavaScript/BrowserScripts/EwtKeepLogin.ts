@@ -2,7 +2,7 @@ function EwtKeepLogin() {
 	async function getVideoTime() { // 获取周看课时长
 		try {
 			const response = await fetch('https://web.ewt360.com/customerApi/api/studyprod/lessonCenter/getUserTimeRanking', { // fetch 看课时长 API
-				credentials: 'same-origin', // 发送验证信息 (cookies)
+				credentials: 'include', // 发送验证信息 (cookies)
 				mode: 'cors' // 跨域
 			});
 			if (response.ok) { // 判断是否出现 HTTP 异常
