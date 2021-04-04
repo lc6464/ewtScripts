@@ -10,6 +10,10 @@
 // @require      https://cdn.jsdelivr.net/npm/js-base64@3.6.0/base64.min.js
 // ==/UserScript==
 // GitHub 仓库地址：https://github.com/lc6464/ewtPrograms
+/* 存在的几个问题：
+1. 需要 require 的并不适合用 TypeScript 重写，有点形式主义了。
+2. 如果多选题已经有选项被选择了就会导致做错（对程序没有影响，依然可以正常运行，但是最后的正确率就不是100%了，即使你的答案是正确的，除非你故意传入一个和被选选项、正确答案有特定关系的答案）。
+3. 有一个不符合 TypeScript 程序编写精神的地方，但是我不想修复，问题2我暂时也懒得改。
 
 /* 公开更新记录
 * 0.1.0：初代版本，测试 TypeScript 重写。
@@ -47,7 +51,7 @@ var Base64: { encode: Function, decode: Function }; // 这两个是油猴导入�
 			$('.question-options').each(function (this: HTMLElement, i: number) {
 				const self = $(this);
 				ans[i].split(',').forEach(function (thisAns: string) {
-					self.find('.option-item')[choices[thisAns]].click(); // 这个报错我试了好多种办法都解决不了，无语了……
+					self.find('.option-item')[choices[thisAns]].click(); // 这个报错我试了好多种办法都解决不了，无语了…… 于是就不解决了，还不如用简单一点的写法，就这样吧。
 				});
 			});
 		}
